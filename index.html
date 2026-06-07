@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SimulaBolivia — Métodos Numéricos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=IBM+Plex+Mono:wght@400;600&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="navbar">
+  <div class="nav-brand">SIMULA<span>BO</span></div>
+  <ul class="nav-links">
+    <li><a href="#inicio">Inicio</a></li>
+    <li><a href="#modulo1">Abastecimiento</a></li>
+    <li><a href="#modulo2">Umbrales</a></li>
+    <li><a href="#modulo3">Precios</a></li>
+    <li><a href="#modulo4">Poder Adq.</a></li>
+    <li><a href="#modulo5">Reservas</a></li>
+    <li><a href="#conclusiones">Conclusiones</a></li>
+  </ul>
+  <button class="hamburger" id="hamburger">☰</button>
+</nav>
+
+<!-- HERO -->
+<section id="inicio" class="hero">
+  <div class="hero-grid-bg"></div>
+  <div class="hero-content">
+    <div class="hero-tag">DESAFÍO FINAL · MÉTODOS NUMÉRICOS</div>
+    <h1>Simulación de Crisis:<br/><span>Abastecimiento & Precios</span></h1>
+    <p>Modelado matemático y computacional de escenarios reales: distribución de carburantes, umbrales críticos, curvas de precios, poder adquisitivo familiar y vaciado de reservas.</p>
+    <div class="hero-modules">
+      <a href="#modulo1" class="mod-chip">A · Sistemas Lineales</a>
+      <a href="#modulo2" class="mod-chip">E · Raíces</a>
+      <a href="#modulo3" class="mod-chip">C · Interpolación</a>
+      <a href="#modulo4" class="mod-chip">D · Integración</a>
+      <a href="#modulo5" class="mod-chip">B · EDO</a>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <canvas id="heroChart" width="380" height="260"></canvas>
+  </div>
+</section>
+
+<!-- CONTEXTO GENERAL -->
+<section class="context-section">
+  <div class="context-inner">
+    <h3>¿Por qué modelar esta crisis matemáticamente?</h3>
+    <p>
+      Bolivia atraviesa desde 2023 una de sus crisis de abastecimiento más complejas de las últimas décadas.
+      La escasez de dólares en el sistema financiero ha restringido la importación de combustibles, generando
+      largas filas en surtidores de todo el país, especialmente en La Paz, Cochabamba y Santa Cruz.
+      Según reportes del sector transportista, en algunos departamentos el tiempo de espera para cargar
+      combustible superó las 6 horas durante los meses más críticos de 2024.
+    </p>
+    <p>
+      Simultáneamente, el precio de productos básicos de la canasta familiar — papa, arroz, carne, aceite —
+      registró incrementos sostenidos. El Índice de Precios al Consumidor (IPC) calculado por el INE Bolivia
+      mostró presión inflacionaria en alimentos, afectando directamente el poder adquisitivo de las familias
+      de menores ingresos. Los bloqueos de rutas por conflictos sociales agravaron el problema al interrumpir
+      las cadenas de distribución entre el altiplano y los valles.
+    </p>
+    <p>
+      Este proyecto aplica <strong>métodos numéricos</strong> para transformar esa realidad en modelos
+      matemáticos simulables: ¿Cuánto combustible debe enviarse a cada zona para satisfacer la demanda?
+      ¿En qué día una familia entra en déficit? ¿Cuándo se vacía un surtidor si el reabastecimiento se corta?
+      La matemática no resuelve la crisis, pero sí la hace comprensible y cuantificable.
+    </p>
+    <div class="context-stats">
+      <div class="stat-card"><span class="stat-num">+40%</span><span class="stat-label">Incremento estimado en precios de canasta básica (2023–2024)</span></div>
+      <div class="stat-card"><span class="stat-num">6+ hrs</span><span class="stat-label">Tiempo promedio de espera en surtidores en picos de escasez</span></div>
+      <div class="stat-card"><span class="stat-num">3 zonas</span><span class="stat-label">Regiones críticas: altiplano, valles e Illimani modeladas en la simulación</span></div>
+      <div class="stat-card"><span class="stat-num">Bs 5000</span><span class="stat-label">Salario mínimo nacional de referencia para el análisis de poder adquisitivo</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== MÓDULO 1: SISTEMAS LINEALES ===================== -->
+<section id="modulo1" class="module mod-a">
+  <div class="module-header">
+    <span class="mod-label">MÓDULO 01 — ESCENARIO A</span>
+    <h2>Optimización del Abastecimiento y Red de Transporte</h2>
+
+    <div class="context-block">
+      <h4>Contexto real — Bolivia</h4>
+      <p>
+        YPFB (Yacimientos Petrolíferos Fiscales Bolivianos) es la empresa estatal encargada de
+        distribuir combustibles desde sus plantas de almacenamiento hacia los surtidores del país.
+        Durante la crisis de 2024, la distribución se vio afectada por dos factores simultáneos:
+        la reducción de importaciones de diésel y gasolina por restricciones de divisas, y el
+        bloqueo de rutas troncales que dificultó el transporte desde las plantas hacia zonas urbanas.
+      </p>
+      <p>
+        Este módulo simula cómo distribuir combustible desde <strong>3 plantas de almacenamiento</strong>
+        (por ejemplo: Senkata en El Alto, Cochabamba y Santa Cruz) hacia <strong>3 zonas de demanda</strong>
+        (Zona Norte, Centro y Sur de una ciudad). El objetivo es encontrar cuánto debe enviarse desde
+        cada planta a cada zona para satisfacer exactamente la demanda, respetando las capacidades
+        de cada ruta. Si una ruta queda bloqueada (valor cero en la matriz), el sistema revela qué
+        zona queda desabastecida y cuánto debe compensarse desde otra fuente.
+      </p>
+      <p>
+        El sistema de ecuaciones <strong>Ax = b</strong> representa este problema: cada fila es una
+        restricción de balance (planta o zona), cada incógnita xᵢ es la cantidad enviada por una ruta
+        específica, y el vector b contiene las demandas mínimas por zona.
+      </p>
+    </div>
+  </div>
+
+  <div class="module-body">
+    <div class="algo-box">
+      <h4> Modelo matemático — Sistema Ax = b</h4>
+      <p>Se plantea un sistema de ecuaciones lineales donde:</p>
+      <ul class="algo-list">
+        <li><strong>A</strong> es la matriz de costos o capacidades de transporte (3×3): cada elemento aᵢⱼ representa el costo o capacidad de enviar desde la planta i hacia la zona j.</li>
+        <li><strong>x</strong> es el vector solución: xᵢ representa la cantidad de combustible (en litros o toneladas) asignada a cada ruta.</li>
+        <li><strong>b</strong> es el vector de demandas: bᵢ es la cantidad mínima requerida por cada zona.</li>
+      </ul>
+      <p>Si un elemento de A es 0, esa ruta está bloqueada (simulando un corte de carretera). El sistema puede volverse mal condicionado cuando los bloqueos generan dependencia entre rutas.</p>
+    </div>
+
+    <div class="algo-box algo-steps">
+      <h4> ¿Cómo funcionan los métodos?</h4>
+      <div class="methods-grid">
+        <div class="method-card">
+          <strong>Jacobi</strong>
+          <p>En cada iteración, actualiza todas las incógnitas usando solo los valores de la iteración anterior. Requiere que la diagonal de A sea dominante. Es más lento pero más estable.</p>
+          <code>x<sup>k+1</sup><sub>i</sub> = (bᵢ − Σ aᵢⱼ·x<sup>k</sup><sub>j</sub>) / aᵢᵢ</code>
+        </div>
+        <div class="method-card">
+          <strong>Gauss-Seidel</strong>
+          <p>Igual que Jacobi pero usa inmediatamente los valores actualizados en la misma iteración. Converge más rápido que Jacobi para sistemas diagonalmente dominantes.</p>
+          <code>x<sup>k+1</sup><sub>i</sub> = (bᵢ − Σ aᵢⱼ·x<sup>k+1</sup><sub>j</sub>) / aᵢᵢ</code>
+        </div>
+        <div class="method-card">
+          <strong>SOR (Sobre-relajación)</strong>
+          <p>Versión acelerada de Gauss-Seidel. El parámetro ω (entre 1 y 2) pondera entre el valor anterior y el nuevo para acelerar convergencia.</p>
+          <code>x<sup>nuevo</sup><sub>i</sub> = (1−ω)·x<sup>ant</sup><sub>i</sub> + ω·x<sup>GS</sup><sub>i</sub></code>
+        </div>
+        <div class="method-card">
+          <strong>Descomposición LU</strong>
+          <p>Factoriza A = L·U (triangular inferior y superior) con pivoteo parcial. Luego resuelve Ly = b y Ux = y. Es un método directo (no iterativo): da la solución exacta en un número fijo de pasos.</p>
+        </div>
+        <div class="method-card">
+          <strong>Gradiente Conjugado</strong>
+          <p>Método iterativo óptimo para matrices simétricas definidas positivas. Minimiza el error en la dirección del gradiente conjugado. Especialmente eficiente para sistemas grandes y dispersos.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls-grid">
+      <div class="control-group">
+        <label>Método de solución</label>
+        <select id="m1-method">
+          <option value="gauss_seidel">Gauss-Seidel</option>
+          <option value="jacobi">Jacobi</option>
+          <option value="sor">SOR</option>
+          <option value="lu">Descomposición LU</option>
+          <option value="grad_conj">Gradiente Conjugado</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Factor de relajación ω (solo SOR)</label>
+        <input type="number" id="m1-omega" value="1.25" min="0.1" max="1.99" step="0.05" />
+      </div>
+      <div class="control-group">
+        <label>Tolerancia</label>
+        <input type="number" id="m1-tol" value="0.0001" step="0.00001" />
+      </div>
+      <div class="control-group">
+        <label>Max iteraciones</label>
+        <input type="number" id="m1-maxiter" value="100" />
+      </div>
+    </div>
+
+    <div class="matrix-section">
+      <h4>Matriz de costos/capacidades A (3×3) — Plantas × Zonas</h4>
+      <p class="hint">Filas = Plantas (Senkata, Cochabamba, Sta. Cruz) · Columnas = Zona Norte, Centro, Sur · Pon <strong>0</strong> para bloquear una ruta</p>
+      <div class="matrix-inputs" id="m1-matrix">
+        <!-- generada por JS -->
+      </div>
+      <h4 style="margin-top:1.5rem">Vector de demandas b (litros requeridos por zona)</h4>
+      <div class="vec-inputs" id="m1-vec-b"></div>
+    </div>
+
+    <div class="scenario-presets">
+      <button class="btn-preset" onclick="loadPreset('normal')"> Distribución Normal</button>
+      <button class="btn-preset" onclick="loadPreset('bloqueo')">Ruta Bloqueada (crisis)</button>
+      <button class="btn-preset" onclick="loadPreset('crisis')"> Demanda Alta</button>
+    </div>
+
+    <button class="btn-run" onclick="runModule1()">▶ Ejecutar Simulación</button>
+
+    <div class="results-panel" id="m1-results" style="display:none">
+      <h4>Resultados</h4>
+      <div id="m1-output"></div>
+      <table class="data-table" id="m1-table"></table>
+      <canvas id="m1-chart" height="120"></canvas>
+      <div class="interpretation" id="m1-interpretation"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== MÓDULO 2: RAÍCES ===================== -->
+<section id="modulo2" class="module mod-e">
+  <div class="module-header">
+    <span class="mod-label">MÓDULO 02 — ESCENARIO E</span>
+    <h2>Umbrales Críticos de Abastecimiento</h2>
+
+    <div class="context-block">
+      <h4> Contexto real — Bolivia</h4>
+      <p>
+        En economías con inflación y precios subvencionados como la boliviana, existen <strong>puntos de quiebre</strong>
+        que marcan el límite entre una situación manejable y una crisis. Tres umbrales son especialmente relevantes
+        en el contexto actual:
+      </p>
+      <ul class="context-list">
+        <li>
+          <strong>Umbral de gasto familiar:</strong> El momento en que el costo acumulado de la canasta básica
+          iguala o supera el ingreso mensual. Con el salario mínimo nacional en Bs 2.362 y precios en alza,
+          muchas familias del área periurbana de ciudades como El Alto o Sacaba alcanzaron ese umbral antes
+          de finalizar el mes.
+        </li>
+        <li>
+          <strong>Umbral de reserva crítica:</strong> La tasa de reposición de combustible en una planta que
+          iguala exactamente el consumo diario. Por debajo de ese valor, la reserva cae inevitablemente a cero.
+          Con el corte de importaciones, varias plantas operaron por debajo de ese punto crítico durante semanas.
+        </li>
+        <li>
+          <strong>Umbral de opinión social:</strong> El nivel de descontento acumulado a partir del cual
+          el conflicto social se retroalimenta y crece de forma autónoma. Los modelos de dinámica social
+          muestran que existe un punto de no retorno donde la movilización se masifica.
+        </li>
+      </ul>
+      <p>
+        Matemáticamente, estos tres escenarios se reducen a encontrar la <strong>raíz de una función</strong>:
+        el valor x donde f(x) = 0, es decir, donde el sistema cruza de un estado a otro.
+      </p>
+    </div>
+  </div>
+
+  <div class="module-body">
+    <div class="algo-box">
+      <h4> Modelo matemático — Raíces de f(x) = 0</h4>
+      <p>Se formulan funciones no lineales que representan cada umbral:</p>
+      <ul class="algo-list">
+        <li><strong>Umbral de gasto:</strong> f(x) = Ingreso − CostoBase·e<sup>0.03x</sup> = 0 → x* es el día en que el gasto supera el ingreso.</li>
+        <li><strong>Equilibrio de reserva:</strong> f(x) = TasaEntrada·x − Consumo·x² = 0 → x* es la tasa mínima de reposición.</li>
+        <li><strong>Umbral de opinión:</strong> f(x) = α·x·(1−x) − β·x = 0 → x* es el nivel de descontento de equilibrio.</li>
+      </ul>
+    </div>
+
+    <div class="algo-box algo-steps">
+      <h4> ¿Cómo funcionan los métodos de búsqueda de raíces?</h4>
+      <div class="methods-grid">
+        <div class="method-card">
+          <strong>Bisección</strong>
+          <p>Requiere un intervalo [a, b] donde f(a) y f(b) tengan signos opuestos (garantizando la existencia de una raíz). En cada paso divide el intervalo a la mitad y conserva el subintervalo donde el signo cambia. Converge siempre, pero lentamente (convergencia lineal).</p>
+          <code>c = (a + b) / 2 → si f(a)·f(c) &lt; 0, b = c; sino a = c</code>
+        </div>
+        <div class="method-card">
+          <strong>Newton-Raphson</strong>
+          <p>Usa la derivada f'(x) para trazar la tangente en el punto actual y proyectar hacia el eje x. Converge cuadráticamente (muy rápido) si la condición inicial está cerca de la raíz, pero puede divergir si f'(x) ≈ 0.</p>
+          <code>x<sub>k+1</sub> = x<sub>k</sub> − f(x<sub>k</sub>) / f'(x<sub>k</sub>)</code>
+        </div>
+        <div class="method-card">
+          <strong>Secante</strong>
+          <p>Similar a Newton-Raphson pero aproxima la derivada usando dos puntos anteriores, sin necesitar calcularla analíticamente. Convergencia superlineal (entre lineal y cuadrática). Más robusto que Newton cuando f'(x) es difícil de obtener.</p>
+          <code>x<sub>k+1</sub> = x<sub>k</sub> − f(x<sub>k</sub>)·(x<sub>k</sub>−x<sub>k-1</sub>) / (f(x<sub>k</sub>)−f(x<sub>k-1</sub>))</code>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls-grid">
+      <div class="control-group">
+        <label>Función f(x)</label>
+        <select id="m2-func">
+          <option value="gasto">f(x) = Ingreso - CostoBase·e^(0.03x) [umbral de gasto]</option>
+          <option value="reserva">f(x) = TasaEntrada·x - Consumo·x² [equilibrio reserva]</option>
+          <option value="opinion">f(x) = α·x·(1-x) - β·x [umbral de opinión]</option>
+          <option value="custom">Función personalizada</option>
+        </select>
+      </div>
+      <div class="control-group" id="m2-custom-group" style="display:none">
+        <label>f(x) = (escribe en JS, usa Math)</label>
+        <input type="text" id="m2-custom-fn" placeholder="x*x - 4*x + 3" />
+      </div>
+      <div class="control-group">
+        <label>Parámetro 1 (Ingreso / TasaEntrada / α)</label>
+        <input type="number" id="m2-p1" value="5000" />
+      </div>
+      <div class="control-group">
+        <label>Parámetro 2 (CostoBase / Consumo / β)</label>
+        <input type="number" id="m2-p2" value="3000" />
+      </div>
+      <div class="control-group">
+        <label>Método</label>
+        <select id="m2-method">
+          <option value="biseccion">Bisección</option>
+          <option value="newton">Newton-Raphson</option>
+          <option value="secante">Secante</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>a (extremo izq / x₀)</label>
+        <input type="number" id="m2-a" value="0" step="0.1" />
+      </div>
+      <div class="control-group">
+        <label>b (extremo der / x₁)</label>
+        <input type="number" id="m2-b" value="50" step="0.1" />
+      </div>
+      <div class="control-group">
+        <label>Tolerancia</label>
+        <input type="number" id="m2-tol" value="0.0001" step="0.00001" />
+      </div>
+    </div>
+
+    <button class="btn-run" onclick="runModule2()"> Buscar Umbral Crítico</button>
+
+    <div class="results-panel" id="m2-results" style="display:none">
+      <h4>Resultados</h4>
+      <div id="m2-output"></div>
+      <canvas id="m2-chart" height="140"></canvas>
+      <table class="data-table" id="m2-table"></table>
+      <div class="interpretation" id="m2-interpretation"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== MÓDULO 3: INTERPOLACIÓN ===================== -->
+<section id="modulo3" class="module mod-c">
+  <div class="module-header">
+    <span class="mod-label">MÓDULO 03 — ESCENARIO C</span>
+    <h2>Curva de Precios de Alimentos Básicos</h2>
+
+    <div class="context-block">
+      <h4> Contexto real — Bolivia</h4>
+      <p>
+        El precio de la papa — uno de los productos más consumidos en Bolivia, especialmente en el
+        altiplano y los valles — experimentó variaciones significativas durante los períodos de bloqueo
+        de rutas en 2023 y 2024. Las ferias y mercados registran precios distintos cada semana,
+        pero no siempre existen datos diarios continuos. Los datos dispersos dificultan el análisis
+        de tendencias y la toma de decisiones.
+      </p>
+      <p>
+        Este módulo utiliza métodos de <strong>interpolación numérica</strong> para reconstruir la
+        curva continua de precios a partir de datos observados en días concretos. Esto permite estimar
+        el precio en cualquier día sin dato y visualizar cómo evolucionó el costo a lo largo del mes.
+        Los mismos datos del ejemplo del docente son representativos de lo que ocurrió en mercados
+        como la Rodríguez o el mercado Villa Fátima en La Paz: la papa pasó de Bs 8 el kilo a inicios
+        de mes a más de Bs 22 a fin de mes durante picos de escasez por bloqueos en la carretera
+        hacia los Yungas y los valles cochabambinos.
+      </p>
+      <p>
+        La pregunta clave que responde este módulo: <em>¿Cuánto costaba la papa el día 12, el día 17
+        o cualquier día intermedio para el que no hay registro?</em>
+      </p>
+    </div>
+  </div>
+
+  <div class="module-body">
+    <div class="algo-box">
+      <h4> Modelo matemático — Interpolación polinomial</h4>
+      <p>Dado un conjunto de n+1 puntos (x₀,y₀), (x₁,y₁), ..., (xₙ,yₙ) donde xᵢ son los días y yᵢ los precios observados, se construye un polinomio P(x) de grado ≤ n que pase exactamente por todos los puntos. Luego se evalúa P(xₑᵥₐₗ) para estimar el precio en cualquier día.</p>
+    </div>
+
+    <div class="algo-box algo-steps">
+      <h4>¿Cómo funcionan los métodos de interpolación?</h4>
+      <div class="methods-grid">
+        <div class="method-card">
+          <strong>Interpolación de Lagrange</strong>
+          <p>Construye el polinomio como suma ponderada de polinomios base Lᵢ(x), donde cada Lᵢ vale 1 en xᵢ y 0 en todos los demás puntos. Es directo pero costoso computacionalmente para muchos puntos. Puede presentar el <em>fenómeno de Runge</em> (oscilaciones en los extremos) con datos muy dispersos.</p>
+          <code>P(x) = Σ yᵢ · Lᵢ(x), Lᵢ(x) = Π (x−xⱼ)/(xᵢ−xⱼ)</code>
+        </div>
+        <div class="method-card">
+          <strong>Newton (diferencias divididas)</strong>
+          <p>Construye el mismo polinomio que Lagrange pero en forma incremental usando una tabla triangular de diferencias divididas. Ventaja: si se agrega un nuevo dato, solo se añade un término sin recalcular todo. Equivalente matemáticamente a Lagrange.</p>
+          <code>P(x) = f[x₀] + f[x₀,x₁](x−x₀) + f[x₀,x₁,x₂](x−x₀)(x−x₁) + ...</code>
+        </div>
+        <div class="method-card">
+          <strong>Splines cúbicos</strong>
+          <p>En lugar de un único polinomio de grado alto, construye polinomios cúbicos separados entre cada par de puntos consecutivos, garantizando continuidad en la función, su primera derivada y su segunda derivada. Evita el fenómeno de Runge. Es el método más recomendado para datos económicos reales con tendencias suaves.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls-grid">
+      <div class="control-group">
+        <label>Método de interpolación</label>
+        <select id="m3-method">
+          <option value="lagrange">Lagrange</option>
+          <option value="newton">Newton (diferencias divididas)</option>
+          <option value="splines">Splines cúbicos</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Día a estimar</label>
+        <input type="number" id="m3-xeval" value="12" min="1" max="35" />
+      </div>
+    </div>
+
+    <div class="data-editor">
+      <h4>Datos de precios observados (día → precio en Bs/kg)</h4>
+      <p class="hint">Datos de referencia basados en el ejemplo del docente (mercado tipo Rodríguez, La Paz). Puedes editar o agregar puntos.</p>
+      <div id="m3-data-rows"></div>
+      <div class="row-btns">
+        <button class="btn-secondary" onclick="addDataRow()">+ Agregar punto</button>
+        <button class="btn-secondary" onclick="resetDataRows()">↺ Datos por defecto</button>
+      </div>
+    </div>
+
+    <button class="btn-run" onclick="runModule3()"> Interpolar Curva</button>
+
+    <div class="results-panel" id="m3-results" style="display:none">
+      <h4>Resultados</h4>
+      <div id="m3-output"></div>
+      <canvas id="m3-chart" height="140"></canvas>
+      <table class="data-table" id="m3-table"></table>
+      <div class="interpretation" id="m3-interpretation"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== MÓDULO 4: INTEGRACIÓN ===================== -->
+<section id="modulo4" class="module mod-d">
+  <div class="module-header">
+    <span class="mod-label">MÓDULO 04 — ESCENARIO D</span>
+    <h2>Costo Acumulado y Pérdida del Poder Adquisitivo Familiar</h2>
+
+    <div class="context-block">
+      <h4> Contexto real — Bolivia</h4>
+      <p>
+        El <strong>poder adquisitivo</strong> mide cuántos bienes y servicios puede comprar una familia
+        con su ingreso. Cuando los precios suben pero el salario no, el poder adquisitivo cae: la misma
+        cantidad de dinero alcanza para menos. En Bolivia, el salario mínimo nacional vigente es de
+        <strong>Bs 2.362 mensuales</strong>, mientras que el salario promedio en el sector informal
+        (donde trabaja la mayoría de la población) oscila entre Bs 3.000 y Bs 5.000.
+      </p>
+      <p>
+        Durante los períodos de escasez y bloqueos de 2023-2024, el costo de la canasta básica familiar
+        en ciudades como El Alto, Oruro o Potosí registró aumentos diarios. Una familia que compraba
+        su canasta de alimentos básicos (papa, arroz, azúcar, aceite, fideos) por Bs 150/día a inicio
+        de mes, podía estar pagando Bs 225 o más al final del mismo mes. Ese incremento gradual,
+        integrado a lo largo de 30 días, representa la <strong>pérdida real acumulada</strong>.
+      </p>
+      <p>
+        Este módulo calcula esa pérdida usando <strong>integración numérica</strong>: el área bajo la
+        curva de costo diario C(t) representa el gasto total del mes. Comparar esa área con el
+        rectángulo de gasto estable (precio fijo por 30 días) muestra exactamente cuánto dinero
+        adicional gastó la familia por causa de la inflación.
+      </p>
+    </div>
+  </div>
+
+  <div class="module-body">
+    <div class="algo-box">
+      <h4> Modelo matemático — Integración de la curva de costos</h4>
+      <p>El gasto total mensual es:</p>
+      <code style="display:block;margin:0.5rem 0;padding:0.5rem;background:rgba(0,0,0,0.3);border-radius:4px">Gasto total = ∫₀ᵀ C(t) dt</code>
+      <p>Donde C(t) es el costo diario de la canasta básica en función del tiempo t (días). Si los precios son estables, C(t) = C₀ y el gasto es simplemente C₀·T. Con inflación, C(t) > C₀ y el área bajo la curva es mayor que ese rectángulo base. La diferencia es la <strong>pérdida del poder adquisitivo</strong>.</p>
+    </div>
+
+    <div class="algo-box algo-steps">
+      <h4> ¿Cómo funcionan los métodos de integración numérica?</h4>
+      <div class="methods-grid">
+        <div class="method-card">
+          <strong>Regla del Trapecio</strong>
+          <p>Divide el intervalo [0, T] en n subintervalos iguales y aproxima el área de cada uno como un trapecio (dos puntos conectados por una línea recta). Simple y robusto. Error proporcional a h² (orden 2). Con más subintervalos, mayor precisión.</p>
+          <code>∫ ≈ (h/2)[f(x₀) + 2f(x₁) + ... + 2f(xₙ₋₁) + f(xₙ)]</code>
+        </div>
+        <div class="method-card">
+          <strong>Simpson 1/3</strong>
+          <p>Aproxima el área usando parábolas (polinomio de grado 2) en grupos de 3 puntos. Requiere n par. Mucho más preciso que el Trapecio con la misma cantidad de puntos. Error proporcional a h⁴ (orden 4). Recomendado para funciones suaves como curvas de precios.</p>
+          <code>∫ ≈ (h/3)[f(x₀) + 4f(x₁) + 2f(x₂) + 4f(x₃) + ... + f(xₙ)]</code>
+        </div>
+        <div class="method-card">
+          <strong>Simpson 3/8</strong>
+          <p>Usa polinomios de grado 3 en grupos de 4 puntos. Requiere n múltiplo de 3. Ligeramente más preciso que Simpson 1/3 en algunos casos. Error también de orden h⁴. Complementa a Simpson 1/3 cuando el número de subintervalos no es divisible por 2.</p>
+          <code>∫ ≈ (3h/8)[f(x₀) + 3f(x₁) + 3f(x₂) + 2f(x₃) + ... + f(xₙ)]</code>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls-grid">
+      <div class="control-group">
+        <label>Modelo de precio C(t)</label>
+        <select id="m4-func">
+          <option value="lineal">C(t) = C₀ + r·t (crecimiento lineal)</option>
+          <option value="exponencial">C(t) = C₀·e^(r·t) (crecimiento exponencial)</option>
+          <option value="escalon">C(t) por tramos (datos de interpolación)</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Costo inicial C₀ (Bs/día)</label>
+        <input type="number" id="m4-c0" value="150" />
+      </div>
+      <div class="control-group">
+        <label>Tasa de incremento r</label>
+        <input type="number" id="m4-r" value="2.5" step="0.1" />
+      </div>
+      <div class="control-group">
+        <label>Días del mes T</label>
+        <input type="number" id="m4-T" value="30" min="1" max="60" />
+      </div>
+      <div class="control-group">
+        <label>Número de subintervalos n</label>
+        <input type="number" id="m4-n" value="30" min="2" max="200" />
+      </div>
+      <div class="control-group">
+        <label>Ingreso mensual familiar (Bs)</label>
+        <input type="number" id="m4-ingreso" value="5000" />
+      </div>
+    </div>
+
+    <button class="btn-run" onclick="runModule4()"> Calcular Gasto Acumulado</button>
+
+    <div class="results-panel" id="m4-results" style="display:none">
+      <h4>Resultados</h4>
+      <div id="m4-output"></div>
+      <canvas id="m4-chart" height="140"></canvas>
+      <table class="data-table" id="m4-table"></table>
+      <div class="interpretation" id="m4-interpretation"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== MÓDULO 5: EDO ===================== -->
+<section id="modulo5" class="module mod-b">
+  <div class="module-header">
+    <span class="mod-label">MÓDULO 05 — ESCENARIO B</span>
+    <h2>Vaciado Crítico de Reservas de Carburantes</h2>
+
+    <div class="context-block">
+      <h4> Contexto real — Bolivia</h4>
+      <p>
+        Bolivia importa el 40-50% del diésel y gasolina que consume. Cuando las divisas escasean y
+        YPFB no puede pagar a los proveedores internacionales, el flujo de importación se reduce o
+        se corta temporalmente. En esas condiciones, las plantas de almacenamiento solo pueden
+        distribuir lo que ya tienen en sus reservas.
+      </p>
+      <p>
+        El fenómeno del <strong>pánico de compra</strong> agrava dramáticamente la situación:
+        cuando circula el rumor de escasez, los conductores llenan sus tanques con más frecuencia
+        de lo normal, los transportistas almacenan bidones y las estaciones de servicio ven su
+        demanda dispararse en un 30-60% en pocas horas. Esto acelera el vaciado de reservas
+        que de otro modo habría durado semanas.
+      </p>
+      <p>
+        Este módulo simula esa dinámica mediante una <strong>ecuación diferencial ordinaria (EDO)</strong>:
+        la tasa de cambio de la reserva R(t) depende de cuánto entra (reabastecimiento) menos cuánto
+        sale (consumo). Cuando la entrada es cero (bloqueo total o corte de importaciones), la reserva
+        cae de forma continua hasta agotarse. El modelo muestra exactamente cuántos días tarda ese
+        vaciado y cómo el factor de pánico lo acelera exponencialmente.
+      </p>
+      <p>
+        Escenario de referencia: planta de Senkata, El Alto, con reserva inicial de 10.000 litros,
+        consumo base de 1.000 L/día y reabastecimiento de 800 L/día — déficit neto de 200 L/día.
+      </p>
+    </div>
+  </div>
+
+  <div class="module-body">
+    <div class="algo-box">
+      <h4> Modelo matemático — EDO de vaciado de reservas</h4>
+      <p>La reserva R(t) en litros evoluciona según:</p>
+      <code style="display:block;margin:0.5rem 0;padding:0.5rem;background:rgba(0,0,0,0.3);border-radius:4px">dR/dt = Entrada(t) − Consumo(t) · (1 + κ·t)</code>
+      <p>Donde κ es el factor de pánico que modela el incremento progresivo del consumo por demanda ansiosa. Si κ = 0, el consumo es constante. Si κ > 0, la demanda crece con el tiempo conforme se extiende el rumor de escasez. La simulación traza R(t) hasta que R = 0 (reserva agotada) o hasta el número de días definido.</p>
+    </div>
+
+    <div class="algo-box algo-steps">
+      <h4>¿Cómo funcionan los métodos para EDOs?</h4>
+      <div class="methods-grid">
+        <div class="method-card">
+          <strong>Euler (orden 1)</strong>
+          <p>El método más simple. Avanza desde el punto actual usando la pendiente (derivada) en ese punto. El error se acumula en cada paso (error local O(h²), global O(h)). Útil para ilustrar el concepto pero impreciso con pasos h grandes.</p>
+          <code>R(t+h) = R(t) + h · f(t, R(t))</code>
+        </div>
+        <div class="method-card">
+          <strong>Heun (Euler mejorado, orden 2)</strong>
+          <p>Corrección de Euler: primero predice el siguiente valor con Euler, luego corrige usando el promedio de la pendiente al inicio y al final del paso. Duplica la precisión respecto a Euler con casi el mismo costo computacional. Error global O(h²).</p>
+          <code>k₁ = f(tₙ, Rₙ); k₂ = f(tₙ+h, Rₙ+h·k₁)</code>
+          <code>R(t+h) = Rₙ + (h/2)·(k₁ + k₂)</code>
+        </div>
+        <div class="method-card">
+          <strong>Runge-Kutta 4 (RK4, orden 4)</strong>
+          <p>El método estándar de referencia para EDOs. Calcula 4 pendientes intermedias por paso y las combina con pesos óptimos. Error global O(h⁴): enormemente más preciso que Euler y Heun. Es el método recomendado para aplicaciones de ingeniería y simulación real.</p>
+          <code>k₁=f(t,R); k₂=f(t+h/2, R+hk₁/2)</code>
+          <code>k₃=f(t+h/2, R+hk₂/2); k₄=f(t+h, R+hk₃)</code>
+          <code>R(t+h) = R + (h/6)(k₁+2k₂+2k₃+k₄)</code>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls-grid">
+      <div class="control-group">
+        <label>Método numérico</label>
+        <select id="m5-method">
+          <option value="rk4">Runge-Kutta 4 (RK4)</option>
+          <option value="heun">Heun (RK2)</option>
+          <option value="euler">Euler</option>
+          <option value="todos">Comparar los 3 métodos</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Reserva inicial R₀ (litros)</label>
+        <input type="number" id="m5-r0" value="10000" />
+      </div>
+      <div class="control-group">
+        <label>Entrada diaria base (litros/día)</label>
+        <input type="number" id="m5-entrada" value="800" />
+      </div>
+      <div class="control-group">
+        <label>Consumo base (litros/día)</label>
+        <input type="number" id="m5-consumo" value="1000" />
+      </div>
+      <div class="control-group">
+        <label>Factor de pánico κ (incremento % consumo)</label>
+        <input type="number" id="m5-panico" value="0.02" step="0.001" />
+      </div>
+      <div class="control-group">
+        <label>Días a simular</label>
+        <input type="number" id="m5-dias" value="30" min="1" max="120" />
+      </div>
+      <div class="control-group">
+        <label>Paso h (días)</label>
+        <input type="number" id="m5-h" value="0.5" step="0.1" min="0.01" />
+      </div>
+    </div>
+
+    <div class="scenario-presets">
+      <button class="btn-preset" onclick="loadEDOPreset('normal')">Operación Normal</button>
+      <button class="btn-preset" onclick="loadEDOPreset('bloqueo')">Bloqueo (entrada 0)</button>
+      <button class="btn-preset" onclick="loadEDOPreset('panico')"> Pánico de Compra</button>
+    </div>
+
+    <button class="btn-run" onclick="runModule5()">▶ Simular Vaciado</button>
+
+    <div class="results-panel" id="m5-results" style="display:none">
+      <h4>Resultados</h4>
+      <div id="m5-output"></div>
+      <canvas id="m5-chart" height="160"></canvas>
+      <table class="data-table" id="m5-table"></table>
+      <div class="interpretation" id="m5-interpretation"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== CONCLUSIONES ===================== -->
+<section id="conclusiones" class="module mod-conclusion">
+  <div class="module-header">
+    <span class="mod-label">CONCLUSIONES</span>
+    <h2>Reflexión y Análisis</h2>
+  </div>
+  <div class="module-body">
+    <div class="conclusion-grid">
+      <div class="conclusion-card">
+        <h4>Lo que se aprendió</h4>
+        <p>Los métodos numéricos permiten transformar problemas sociales complejos — como la crisis de abastecimiento boliviana — en modelos matemáticos resolubles y cuantificables. La simulación revela que pequeñas perturbaciones (un bloqueo de ruta, un rumor de escasez, un incremento del 5% en el consumo) pueden generar efectos desproporcionados en sistemas con alto número de condición o en EDOs con factores de pánico. La matemática no reemplaza el análisis social, pero lo hace objetivo y medible.</p>
+      </div>
+      <div class="conclusion-card">
+        <h4> Métodos más útiles</h4>
+        <p>RK4 demostró ser el más preciso para la dinámica de reservas: con pasos h = 0.5 días, su error es órdenes de magnitud menor que Euler. Los Splines cúbicos ofrecen la interpolación más realista para curvas de precios al evitar oscilaciones. Para sistemas lineales, LU con pivoteo es el más confiable en presencia de matrices mal condicionadas. Newton-Raphson encuentra umbrales críticos en pocas iteraciones cuando el punto inicial es adecuado.</p>
+      </div>
+      <div class="conclusion-card">
+        <h4> Limitaciones del modelo</h4>
+        <p>Los modelos asumen parámetros constantes (tasa de entrada, consumo base, factor de pánico), cuando en la realidad estas variables fluctúan hora a hora. Los datos utilizados son aproximaciones educativas basadas en reportes periodísticos, no en datos oficiales del INE o YPFB. Los sistemas de 3 zonas y 3 plantas son una simplificación: la red real de distribución boliviana tiene decenas de nodos y rutas. Finalmente, los modelos no capturan factores políticos o institucionales que afectan la distribución.</p>
+      </div>
+      <div class="conclusion-card">
+        <h4> Mejoras posibles</h4>
+        <p>Integrar datos reales del INE Bolivia (IPC mensual) y de YPFB (volúmenes distribuidos por departamento). Ampliar el sistema a 9 zonas y 9 plantas para reflejar la red real. Agregar un módulo de optimización (Programación Lineal) para minimizar costos de transporte. Implementar el Escenario G (difusión social) con el modelo N-M-D. Conectar con APIs de precios en tiempo real de los mercados de La Paz.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <p>SimulaBolivia · Desafío Final Métodos Numéricos · 2025</p>
+  <p>HTML · CSS · JavaScript · Chart.js</p>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
